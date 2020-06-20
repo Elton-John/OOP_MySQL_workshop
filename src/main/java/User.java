@@ -11,6 +11,13 @@ public class User {
         //this.password = BCrypt.hashpw(password, BCrypt.gensalt());;
     }
 
+    public User(int id, String email, String username, String password) {
+        this.id = id;
+        this.email = email;
+        this.username = username;
+        this.password = password;
+    }
+
     public int getId() {
         return id;
     }

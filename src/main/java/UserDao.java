@@ -41,4 +41,20 @@ public class UserDao {
         return user;
     }
 
+//    Służyć ma ona do odczytania użytkownika dla zadanego identykatora. Jej sygnatura jest
+//    następująca:
+//    Metoda przyjmuje obiekt klasy
+//   //, który powinien posiadać wypełnione
+//    atrybuty, (userName,
+//    email, password, id),
+//    Metoda nic nie zwraca.
+//    W ramach metody należy zmienić dane w bazie na podstawie danych z obiektu.
+
+    public static void update (User user){
+        Connection connToWorkshop2 = DBUtil.connect("workshop2");
+        String query = "UPDATE users SET email=?, username=?, password=? WHERE id=?;";
+        DBUtil.updateOfId(connToWorkshop2,query,user.getEmail(),user.getUsername(),user.getPassword(),user.getId());
+
+    }
+
 }
