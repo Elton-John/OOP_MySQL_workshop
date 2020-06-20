@@ -1,12 +1,17 @@
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 public class UserDao {
 
     public static Connection connectToWorkshop2() {
-        Connection connToWorkshop2 = DBUtil.connect("workshop2");
-        return connToWorkshop2;
+        try (Connection connToWorkshop2 = DBUtil.connect("workshop2")) {
+            return connToWorkshop2;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 //    Metoda przyjmuje obiekt klasy
@@ -21,7 +26,7 @@ public class UserDao {
 //    uzupełnić id w obiekcie
 //    zwrócić uzupełniony obiekt
 
-    public static User create(User user) {
+    public User create(User user) {
         String queryInsert = "INSERT INTO users (email, username, password) VALUES (?,?,?);";
         DBUtil.insert(connectToWorkshop2(), queryInsert, user.getEmail(), user.getUsername(), user.getPassword());
         String queryGetId = "SELECT id FROM users WHERE email LIKE '" + user.getEmail() + "';";
@@ -39,15 +44,14 @@ public class UserDao {
 //    uzupełnić obiekt danymi z bazy
 //    zwrócić uzupełniony obiek
 
-    public static User read(int userId) {
-        User user = getNewUserOfId(userId, connectToWorkshop2());
-        return user;
+    public User read(int userId) {
+        return getNewUserOfId(userId, connectToWorkshop2());
     }
 
-    private static User getNewUserOfId(int userId, Connection connection) {
+    private User getNewUserOfId(int userId, Connection connection) {
         String query = "SELECT email, username, password FROM users WHERE id = " + userId + ";";
         String[] data = DBUtil.readRows(connectToWorkshop2(), query, "email", "username", "password");
-        return new User(data[0], data[1], data[2]);
+        return new User(userId, data[0], data[1], data[2]);
     }
 
 //    Służyć ma ona do odczytania użytkownika dla zadanego identykatora. Jej sygnatura jest
@@ -59,7 +63,7 @@ public class UserDao {
 //    Metoda nic nie zwraca.
 //    W ramach metody należy zmienić dane w bazie na podstawie danych z obiektu.
 
-    public static void update(User user) {
+    public void update(User user) {
         String query = "UPDATE users SET email=?, username=?, password=? WHERE id=?;";
         DBUtil.updateOfId(connectToWorkshop2(), query, user.getEmail(), user.getUsername(), user.getPassword(), user.getId());
     }
@@ -71,7 +75,7 @@ public class UserDao {
 //    zwrócić tablicę obiektów
 //    Będziemy również potrzebować mechanizmu, który pozwoli nam automatycznie powiększać tablicę
 
-    public static User[] findAll() {
+    public User[] findAll() {
         User[] users = new User[0];
         String query = "SELECT id FROM users";
         int[] tabOfId = DBUtil.getTabOfOneColumn(connectToWorkshop2(), query, "id");
@@ -94,7 +98,7 @@ public class UserDao {
 //    Metoda nic nie zwraca.
 //    W ramach metody należy usunąć wiersz z bazy danych na podstawie przekazanego identykatora
 
-    public static void delete(int idUser) {
+    public void delete(int idUser) {
         DBUtil.remove(connectToWorkshop2(), "users", idUser);
     }
 }
