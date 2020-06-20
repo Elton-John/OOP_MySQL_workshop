@@ -91,4 +91,14 @@ public class UserDao {
         }
         return users;
     }
+
+//    ma ona do odczytania użytkownika dla zadanego identykatora. Jej sygnatura jest
+//    następująca:
+//    Metoda przyjmuje identykator na podstawie, którego należy w bazie danych pobrać wiersz.
+//    Metoda nic nie zwraca.
+//    W ramach metody należy usunąć wiersz z bazy danych na podstawie przekazanego identykatora
+
+    public static void delete(int idUser){
+        DBUtil.remove(connectToWorkshop2(),"users",idUser);
+    }
 }
