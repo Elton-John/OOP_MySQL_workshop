@@ -1,7 +1,10 @@
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 public class UserDao {
 
@@ -14,91 +17,104 @@ public class UserDao {
         return null;
     }
 
-//    Metoda przyjmuje obiekt klasy
-//, który powinien posiadać wypełnione
-//    atrybuty, (userName,
-//    email, password),
-//    id natomiast pozostaje niewypełniony.
-//    Metoda ma zwracać obiekt z uzupełnionym identykatorem.
-//    W ramach metody należy:
-//    zapisać do bazy danych informacje z obiektu
-//    pobrać id nowo zapisanego użytkownika
-//    uzupełnić id w obiekcie
-//    zwrócić uzupełniony obiekt
+    private final String CREATE_USER_QUERY = "INSERT INTO users (email, username, password) VALUES (?,?,?);";
+    private final String GET_ID_USER_QUERY = "SELECT id FROM users WHERE email LIKE 'unique_email';";
 
     public User create(User user) {
-        String queryInsert = "INSERT INTO users (email, username, password) VALUES (?,?,?);";
-        DBUtil.insert(connectToWorkshop2(), queryInsert, user.getEmail(), user.getUsername(), user.getPassword());
-        String queryGetId = "SELECT id FROM users WHERE email LIKE '" + user.getEmail() + "';";
-        int id = DBUtil.getIdFromDatabase(connectToWorkshop2(), queryGetId);
-        user.setId(id);
-        return user;
+        try (Connection conn = DBUtil.connect("workshop2")) {
+            PreparedStatement preStmt = conn.prepareStatement(CREATE_USER_QUERY);
+            preStmt.setString(1, user.getEmail());
+            preStmt.setString(2, user.getUsername());
+            preStmt.setString(3, user.getPassword());
+            preStmt.executeUpdate();
+            user.setId(getIdFromDatabase(conn, GET_ID_USER_QUERY.replace("unique_email", user.getEmail())));
+            return user;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
-//    Służyć ma ona do odczytania użytkownika dla zadanego identykatora. Jej sygnatura jest
-//    następująca:
-//    Metoda przyjmuje identykator na podstawie, którego należy w bazie danych pobrać wiersz.
-//    W ramach metody należy wykonać:
-//    pobrać z bazy danych wiersz dla zadanego identykatora
-//    utworzyć nowy obiekt klasy user
-//    uzupełnić obiekt danymi z bazy
-//    zwrócić uzupełniony obiek
+    public static int getIdFromDatabase(Connection conn, String query) {
+        try (PreparedStatement statement = conn.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery();) {
+            resultSet.next();
+            return resultSet.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    private static final String READ_USER_QUERY = "SELECT email, username, password FROM users WHERE id =?";
 
     public User read(int userId) {
-        return getNewUserOfId(userId, connectToWorkshop2());
+        try (Connection conn = DBUtil.connect("workshop2")) {
+            PreparedStatement preStmt = conn.prepareStatement(READ_USER_QUERY);
+            preStmt.setString(1, String.valueOf(userId));
+            ResultSet resultSet = preStmt.executeQuery();
+            resultSet.next();
+            String email = resultSet.getString("email");
+
+            String username = resultSet.getString("username");
+
+            String password = resultSet.getString("password");
+            return new User(userId, email, username, password);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
-    private User getNewUserOfId(int userId, Connection connection) {
-        String query = "SELECT email, username, password FROM users WHERE id = " + userId + ";";
-        String[] data = DBUtil.readRows(connectToWorkshop2(), query, "email", "username", "password");
-        return new User(userId, data[0], data[1], data[2]);
-    }
-
-//    Służyć ma ona do odczytania użytkownika dla zadanego identykatora. Jej sygnatura jest
-//    następująca:
-//    Metoda przyjmuje obiekt klasy
-//   //, który powinien posiadać wypełnione
-//    atrybuty, (userName,
-//    email, password, id),
-//    Metoda nic nie zwraca.
-//    W ramach metody należy zmienić dane w bazie na podstawie danych z obiektu.
+    private static final String UPDATE_USER_QUERY = "UPDATE users SET email=?, username=?, password=? WHERE id=?;";
 
     public void update(User user) {
-        String query = "UPDATE users SET email=?, username=?, password=? WHERE id=?;";
-        DBUtil.updateOfId(connectToWorkshop2(), query, user.getEmail(), user.getUsername(), user.getPassword(), user.getId());
+        try (Connection conn = DBUtil.connect("workshop2")) {
+            PreparedStatement prepStmt = conn.prepareStatement(UPDATE_USER_QUERY);
+            prepStmt.setString(1, user.getEmail());
+            prepStmt.setString(2, user.getUsername());
+            prepStmt.setString(3, user.getPassword());
+            prepStmt.setInt(4, user.getId());
+            prepStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-//    ramach metody należy wykonać:
-//    pobrać z bazy danych wszystkie wiersze z tabeli users
-//    na podstawie każdego wiersza utworzyć obiekt klasy
-//         obiekty umieścić w tablicy
-//    zwrócić tablicę obiektów
-//    Będziemy również potrzebować mechanizmu, który pozwoli nam automatycznie powiększać tablicę
+    private static final String FIND_ALL_USERS_QUERY = "SELECT id FROM users";
 
     public User[] findAll() {
+        int[] tabOfId = new int[0];
         User[] users = new User[0];
-        String query = "SELECT id FROM users";
-        int[] tabOfId = DBUtil.getTabOfOneColumn(connectToWorkshop2(), query, "id");
-        for (int userId :
-                tabOfId) {
-            User user = getNewUserOfId(userId, connectToWorkshop2());
-            user.setId(userId);
-            users = ArrayUtils.add(users, user);
+        try (Connection conn = DBUtil.connect("workshop2")) {
+            PreparedStatement prepStmt = conn.prepareStatement("SELECT id FROM users");
+            ResultSet resultSet = prepStmt.executeQuery();
+            while (resultSet.next()) {
+                tabOfId = Arrays.copyOf(tabOfId, tabOfId.length + 1);
+                tabOfId[tabOfId.length - 1] = resultSet.getInt("id");
+            }
+            for (int id :
+                    tabOfId) {
+                users = ArrayUtils.add(users, read(id));
+            }
+            System.out.println(Arrays.toString(users));
+            return users;
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        for (User userDate :
-                users) {
-            System.out.println(userDate);
-        }
-        return users;
+        return null;
     }
 
-//    ma ona do odczytania użytkownika dla zadanego identykatora. Jej sygnatura jest
-//    następująca:
-//    Metoda przyjmuje identykator na podstawie, którego należy w bazie danych pobrać wiersz.
-//    Metoda nic nie zwraca.
-//    W ramach metody należy usunąć wiersz z bazy danych na podstawie przekazanego identykatora
+    private static final String DELETE_USER_QUERY = "DELETE FROM users WHERE id=?";
 
     public void delete(int idUser) {
-        DBUtil.remove(connectToWorkshop2(), "users", idUser);
+        try (Connection conn = DBUtil.connect("workshop2")) {
+            PreparedStatement preparedStatement = conn.prepareStatement(DELETE_USER_QUERY);
+            preparedStatement.setInt(1, idUser);
+            preparedStatement.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
