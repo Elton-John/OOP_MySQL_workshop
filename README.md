@@ -7,7 +7,10 @@ MIT license (It lets people do almost anything they want with the project, like 
 
 # This is how it works
  The workshop's task is implementation of DAO.
-**DAO (Data Access Object)**- is a pattern that provides an abstract interface to some type of database.
+ 
+**DAO (Data Access Object)** - is a pattern that provides an abstract interface to some type of database.
+By mapping application calls to the persistence layer, 
+the DAO provides some specific data operations without exposing details of the database.
 
 The UserDAO class should offer the ability to:
 
