@@ -37,7 +37,7 @@ public class UserDao {
 
     public static int getIdFromDatabase(Connection conn, String query) {
         try (PreparedStatement statement = conn.prepareStatement(query);
-             ResultSet resultSet = statement.executeQuery();) {
+             ResultSet resultSet = statement.executeQuery()) {
             resultSet.next();
             return resultSet.getInt(1);
         } catch (SQLException e) {
