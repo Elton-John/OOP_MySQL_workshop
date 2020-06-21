@@ -1,3 +1,5 @@
+import org.mindrot.jbcrypt.BCrypt;
+
 public class User {
     private int id;
     private String email;
@@ -10,8 +12,7 @@ public class User {
     public User(String email, String username, String password) {
         this.email = email;
         this.username = username;
-        this.password = password;
-        //this.password = BCrypt.hashpw(password, BCrypt.gensalt());;
+        this.password = BCrypt.hashpw(password, BCrypt.gensalt());
     }
 
     public User(int id, String email, String username, String password) {
