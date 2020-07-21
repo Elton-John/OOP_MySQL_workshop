@@ -25,3 +25,4 @@ DELETE FROM users WHERE id = ?;
 
 # pobieranie wszystkich użytkowników.
 SELECT * FROM users;
+

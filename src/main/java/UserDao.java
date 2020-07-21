@@ -1,9 +1,7 @@
+import DAO.DBUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Arrays;
 
 public class UserDao {
@@ -22,12 +20,16 @@ public class UserDao {
 
     public User create(User user) {
         try (Connection conn = DBUtil.connect("workshop2")) {
-            PreparedStatement preStmt = conn.prepareStatement(CREATE_USER_QUERY);
+            PreparedStatement preStmt = conn.prepareStatement(CREATE_USER_QUERY, Statement.RETURN_GENERATED_KEYS);
             preStmt.setString(1, user.getEmail());
             preStmt.setString(2, user.getUsername());
             preStmt.setString(3, user.getPassword());
             preStmt.executeUpdate();
-            user.setId(getIdFromDatabase(conn, GET_ID_USER_QUERY.replace("unique_email", user.getEmail())));
+           // user.setId(getIdFromDatabase(conn, GET_ID_USER_QUERY.replace("unique_email", user.getEmail())));
+            ResultSet resultSet = preStmt.getGeneratedKeys();
+            if (resultSet.next()){
+                user.setId(resultSet.getInt(1));
+            }
             return user;
         } catch (SQLException e) {
             e.printStackTrace();
